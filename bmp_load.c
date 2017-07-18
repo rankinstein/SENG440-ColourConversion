@@ -54,6 +54,14 @@ int foo(char* input, char *output) {
         //cleanup
     }
 
+    //print file information
+    printf("filesize: %d\ndataoffset: %d\nheadersize: %d\nwidth: %d\nheight: %d\nbitsperpixel: %d\nbitmap size: %d\nhorizontal resolution: %d\nvertical resolution: %d\nnumcolors: %d\nimportantcolors: %d\n", hp->fileheader.filesize, hp->fileheader.dataoffset, hp->headersize, hp->width, hp->height, hp->bitsperpixel, hp->bitmapsize, hp->horizontalres, hp->verticalres, hp->numcolors, hp->importantcolors);
+
+    //correct for abesnt bitmapsize
+    if(hp->bitmapsize == 0){
+        hp->bitmapsize = hp->fileheader.filesize - 54;
+    }
+
     //Read the data of the image:
     data = (char*)malloc(sizeof(char)*hp->bitmapsize);
     if(data==NULL){
@@ -67,7 +75,7 @@ int foo(char* input, char *output) {
     }
 
         //Open output file:
-    out = fopen(output, "w");
+    out = fopen(output, "wb");
     if(out==NULL){
         //cleanup
     }
@@ -90,6 +98,6 @@ int foo(char* input, char *output) {
 }
 
 int main(void) {
-  printf("Init");
-  foo("./whitesquare.bmp", "./output/new.bmp");
+  printf("Init\n");
+  foo("./input/tiger.bmp", "./output/tiger.bmp");
 }
