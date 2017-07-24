@@ -99,5 +99,5 @@ int foo(char* input, char *output) {
 
 int main(void) {
   printf("Init\n");
-  foo("./input/tiger.bmp", "./output/tiger.bmp");
+  foo("./input/baboon.bmp", "./output/baboon.bmp");
 }
