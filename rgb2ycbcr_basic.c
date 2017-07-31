@@ -33,7 +33,7 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
         R_even = data[i_even++];
         G_even = data[i_even++];
         B_even = data[i_even++];
-        t_even = 16 + 219*(R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
+        t_even = 16 + (R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
         Y[pixel_even] = (char) round(t_even > 255 ? 255 : t_even);
         t_Cb = (R_TO_CB * R_even + G_TO_CB * G_even + B_TO_CB * B_even);
         t_Cr = (R_TO_CR * R_even + G_TO_CR * G_even + B_TO_CR * B_even);
@@ -42,7 +42,7 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
         R_odd = data[i_odd++];
         G_odd = data[i_odd++];
         B_odd = data[i_odd++];
-        t_odd = 16 + 219*(R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
+        t_odd = 16 + (R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
         Y[pixel_odd] = (char) round(t_even > 255 ? 255 : t_odd);
         t_Cb += (R_TO_CB * R_odd + G_TO_CB * G_odd + B_TO_CB * B_odd);
         t_Cr += (R_TO_CR * R_odd + G_TO_CR * G_odd + B_TO_CR * B_odd);
@@ -54,7 +54,7 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
         R_even = data[i_even++];
         G_even = data[i_even++];
         B_even = data[i_even++];
-        t_even = 16 + 219*(R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
+        t_even = 16 + (R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
         Y[pixel_even] = (char) round(t_even > 255 ? 255 : t_even);
         t_Cb += (R_TO_CB * R_even + G_TO_CB * G_even + B_TO_CB * B_even);
         t_Cr += (R_TO_CR * R_even + G_TO_CR * G_even + B_TO_CR * B_even);
@@ -63,7 +63,7 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
         R_odd = data[i_odd++];
         G_odd = data[i_odd++];
         B_odd = data[i_odd++];
-        t_odd = 16 + 219*(R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
+        t_odd = 16 + (R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
         Y[pixel_odd] = (char) round(t_odd > 255 ? 255 : t_odd);
         t_Cb += (R_TO_CB * R_odd + G_TO_CB * G_odd + B_TO_CB * B_odd);
         t_Cr += (R_TO_CR * R_odd + G_TO_CR * G_odd + B_TO_CR * B_odd);
