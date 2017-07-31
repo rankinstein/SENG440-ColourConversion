@@ -3,6 +3,8 @@
 #include <math.h>
 /* #include <arm_neon.h> */
 
+#include "bmp_operations.h"
+
 #define R_TO_Y (65.738)
 #define G_TO_Y (129.057)
 #define B_TO_Y (25.064)
@@ -110,8 +112,11 @@ int write_raw_image_data(char* filename, char* data, int size) {
 int main( int argc, char** argv) {
   printf("RGB to YCbCr: Simple Conversion\n");
 
-  unsigned int nrows = 4;
-  unsigned int ncols = 2;
+  bitmap_image* image = bmp_load("./input/tiger.bmp");
+
+
+  unsigned int nrows = image->header.width;
+  unsigned int ncols = image->header.height;
   unsigned int npixels = nrows * ncols;
   char data2x4[32] = {
     0x20,0x30,0x40,0x20,0x30,0x40,0x00,0x00,
@@ -130,7 +135,7 @@ int main( int argc, char** argv) {
   char* Cb = (char*) malloc(npixels/4);
   char* Cr = (char*) malloc(npixels/4);
 
-  rgb2ycbcr_basic(Y, Cb, Cr, data2x4, nrows, ncols);
+  rgb2ycbcr_basic(Y, Cb, Cr, image->data, nrows, ncols);
 
   print_triple_char(Y, npixels, Cb, npixels/4, Cr, npixels/4);
 
