@@ -13,30 +13,55 @@
 #define Y_NORM_FACTOR (256)
 
 //TODO: TEST ME
-void upsample(char* c_small, unsigned int small_nrows, unsigned int small_ncols) {
-  unsigned int big_nrows = small_nrows*4;
-  unsigned int big_ncols = big_nrows*4;
-  char* c_big = malloc(sizeof(char)*big_nrows*big_ncols);
+char* upsample(char* c_small, unsigned int n_small_rows, unsigned int n_small_cols) {
+  printf("start: upsample\n");
 
-  unsigned int row_i = 0
-  unsigned int col_i = 0
+  printf("%d %d\n", n_small_rows, n_small_cols);
 
-  while (row_i < small_nrows-1) {
+  unsigned int n_big_rows = n_small_rows*4;
+  unsigned int n_big_cols = n_small_cols*4;
 
-    small_col = 0
-    while (col_i < small_ncols-1) {
+printf("%d %d\n", n_big_rows, n_big_cols);
 
-      c_small[small_row]
+  char* c_big = malloc(sizeof(char)*n_big_rows*n_big_cols);
 
-      c_big[cur_index] = c_small[cur_index >> 1];
-      c_big[cur_index + 1] = c_small[cur_index] + c_small[cur_index + 2] >> 2;
-      c_big[cur_index + big_ncols] =
+  unsigned int row = 0;
+  unsigned int col = 0;
+  unsigned int small_i = 0;
+  unsigned int big_i = 0;
 
-      small_col++;
+  while (row < n_small_rows - 1) {
+    printf("row: %d\n", row);
+    col = 0;
+    while (col < n_small_cols - 1) {
+      printf("    col-%d\n", col);
+
+      small_i = row*n_small_cols + col;
+      big_i = (row << 1)*n_big_cols + (col << 1);
+
+      c_big[big_i]                  = c_small[small_i];
+      printf("        %04x = %04x\n", c_big[big_i], c_small[small_i]);
+
+      c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
+      printf("        %04x = (%04x + %04x)/2\n", c_big[big_i + 1], c_small[small_i], c_small[small_i + 1]);
+
+      c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
+      printf("        %04x = (%04x + %04x)/2\n", c_big[big_i + n_big_cols], c_small[small_i], c_small[small_i + n_small_cols]);
+
+      c_big[big_i + n_big_cols + 1] = (c_small[small_i] + c_small[small_i + n_small_cols + 1]) >> 1;
+      printf("        %04x = (%04x + %04x)/2\n", c_big[big_i + n_big_cols + 1], c_small[small_i], c_small[small_i + n_small_cols + 1]);
+
+      col++;
     }
+    printf("\n");
 
-    small_row++
+    row++;
   }
+
+  printf("end: upsample\n");
+  return c_big;
+
+  //must deal with edge cases
 
 }
 
@@ -53,7 +78,7 @@ void convert_ycbcr_to_rgb(char * __restrict Y, char * __restrict Cb, char * __re
 
 
 
-  while ()
+  while (1){}
 }
 
 //TODO: convert this to something useful for debugging
@@ -82,22 +107,30 @@ int write_raw_image_data(char* filename, char* data, int size) {
   return 1;
 }
 
+int write_hex_data(char* data, unsigned int n_bytes, char* filename) {
+  printf("Start: write_hex_data\n");
+  FILE* fp = fopen(filename, "w");
+  fwrite(data, n_bytes, 1, fp);
+  fclose(fp);
+  // printf("End: write_hex_data\n");
+}
+
 //TODO: TEST ME
 char* raw_ycbcr_load(char* filename) {
-  FILE* fp = fopen(filename);
+  FILE* fp = fopen(filename, "rb");
   char* data;
   long file_size;
   if(!fp) {
-    printf("Error opening file (%s) to read\n", filename);
+    // printf("Error opening file (%s) to read\n", filename);
   }
   fseek(fp, 0L, SEEK_END);
   file_size = ftell(fp) + 1;
   rewind(fp);
   data = (char*)malloc(file_size);
   if(data == NULL) {
-    printf("Error allocating memory");
+    // printf("Error allocating memory\n");
   }
-  fread(data, filesize, 1, fp);
+  fread(data, file_size, 1, fp);
   fclose(fp);
   return data;
 }
@@ -113,38 +146,46 @@ int main( int argc, char** argv) {
   unsigned int ncols  = (unsigned int)atoi(argv[1]);
   unsigned int nrows = (unsigned int)atoi(argv[2]);
 
+  // printf("allocate for RGB\n");
   char* rgb = (char*)malloc(3*sizeof(char)*nrows*ncols);
 
   //TODO: save info to header
 
   //unsigned int npixels = nrows * ncols;
-
+  // printf("initialize test data\n");
   char test_y_data[32] = {
     0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
     0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
     0x88,0x77,0x66,0x55,0x44,0x33,0x22,0x11,
     0x88,0x77,0x66,0x55,0x44,0x33,0x22,0x11
   };
-  char test_cb_data[32] = {
-    0xFF,0xDD,0xBB,0x99,0x77,0x55,0x33,0x11
+  char test_cb_data[16] = {
+    0xFF,0xDD,0xBB,0x99,
+    0x77,0x55,0x33,0x11,
+    0xEE,0xCC,0xAA,0x88,
+    0x66,0x44,0x22,0x00
   };
-  char test_cr_data[32] = {
-    0xFF,0xDD,0xBB,0x99,0x77,0x55,0x33,0x11
+  char test_cr_data[16] = {
+    0xFF,0xDD,0xBB,0x99,0x77,0x55,0x33,0x11,
+    0xEE,0xCC,0xAA,0x88,0x66,0x44,0x22,0x00
   };
 
+  // printf("allocate for cb_up\n");
   char* cb_up = malloc(sizeof(char)*nrows*ncols);
-  cb_up = upsample(test_cb_data, nrows/4,ncols/4);
-  char* cr_up = malloc(sizeof(char)*ncols*nrows);
-  cb_up = upsample(test_cr_data, nrows/4,ncols/4);
+  cb_up = upsample(test_cb_data, nrows >> 1, ncols >> 1);
+  write_hex_data(cb_up, 32, "upsample/cb_up");
+  // char* cr_up = malloc(sizeof(char)*ncols*nrows);
+  // cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
+  // write_hex_data(cb_up, 32, "upsample/cr_up");
+  // convert_ycbcr_to_rgb(test_y_data, test_cb_data, test_cr_data, rgb, nrows, ncols);
 
-  convert_ycbcr_to_rgb(test_y_data, test_cb_data, test_cr_data, rgb, nrows, ncols);
 
-  write_raw_image_data("RGB_out.bmp", Y, npixels);
+  // write_raw_image_data("RGB_out.bmp", Y, npixels);
 
-  free(Y);
-  free(Cb);
-  free(Cr);
-  free(RGB);
+  // free(Y);
+  // free(Cb);
+  // free(Cr);
+  // free(RGB);
   return (0);
 }
 
@@ -156,3 +197,4 @@ open raw Cb file
 copy data
 open raw Cr file
 copy data
+*/
