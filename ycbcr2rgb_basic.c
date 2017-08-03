@@ -86,7 +86,7 @@ unsigned char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsig
 //TODO: TEST ME
 void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols)
 {
-  unsigned int size = nrows*ncols*3;
+  unsigned int size = nrows*ncols;
   unsigned int row_padding = 2;
   unsigned int rgb_i = 0;
   unsigned int ycc_i = 0;
@@ -101,30 +101,26 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
   printf("while complete\n");
 
   // unsigned int i;
+  // size = size*3;
   // printf("size: %d\n", size);
   // for (i = 0; i < size; i++) {
-  //   printf("0x%x ", rgb[i]);
-  //   if (i % 3 == 0) printf("- ");
   //   if (i % 24 == 0) printf("\n");
+  //   printf("%x ", rgb[i]);
+  //   if (i % 3 == 2) printf("- ");
   // }
+  // printf("\n");
 
 }
 
-int write_hex_data(char* filename, unsigned char* data, unsigned int n_bytes) {
+int write_hex_data(char* filename, unsigned char* data, unsigned int length) {
 
-  printf("filename: %s\nsize: %d\n", filename, n_bytes);
-
-  printf("opening file...\n");
-  FILE* fp = fopen(filename, "w");
+  FILE* fp = fopen(filename, "wb");
   if (!fp) {
     printf("Unable to open file\n");
     return 1;
   }
-  printf("writing hex data...\n");
-  fwrite(data, n_bytes, 1, fp);
-  printf("closing file...\n");
+  fwrite(data, sizeof(unsigned char), length, fp);
   fclose(fp);
-  printf("finished writing file");
   return 0;
 }
 
@@ -196,11 +192,11 @@ int main( int argc, char** argv) {
   cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
   convert_ycbcr_to_rgb(test_y_data, cb_up, cr_up, rgb, nrows, ncols);
 
-  write_hex_data("upsample/cb_up", cb_up, 64);
+  // write_hex_data("upsample/cb_up", cb_up, 64);
   free(cb_up);
   // write_hex_data("upsample/cr_up", cr_up, 64);
   free(cr_up);
-  // write_hex_data("upsample/RGB_out", rgb, 192);
+  write_hex_data("upsample/RGB_out", rgb, 192);
 
   // free(test_y_data);
   // free(test_cb_data);
