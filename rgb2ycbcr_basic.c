@@ -30,18 +30,18 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
       while(col < ncols) {
         unsigned char R_even, G_even, B_even, R_odd, G_odd, B_odd;
         float t_even, t_odd, t_Cb, t_Cr;
-        R_even = data[i_even++];
-        G_even = data[i_even++];
         B_even = data[i_even++];
+        G_even = data[i_even++];
+        R_even = data[i_even++];
         t_even = 16 + (R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
         Y[pixel_even] = (char) round(t_even > 255 ? 255 : t_even);
         t_Cb = (R_TO_CB * R_even + G_TO_CB * G_even + B_TO_CB * B_even);
         t_Cr = (R_TO_CR * R_even + G_TO_CR * G_even + B_TO_CR * B_even);
 
         // pixel 3
-        R_odd = data[i_odd++];
-        G_odd = data[i_odd++];
         B_odd = data[i_odd++];
+        G_odd = data[i_odd++];
+        R_odd = data[i_odd++];
         t_odd = 16 + (R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
         Y[pixel_odd] = (char) round(t_even > 255 ? 255 : t_odd);
         t_Cb += (R_TO_CB * R_odd + G_TO_CB * G_odd + B_TO_CB * B_odd);
@@ -51,18 +51,18 @@ void rgb2ycbcr_basic(char * __restrict Y, char * __restrict Cb, char * __restric
         col++;
 
         // pixel 2
-        R_even = data[i_even++];
-        G_even = data[i_even++];
         B_even = data[i_even++];
+        G_even = data[i_even++];
+        R_even = data[i_even++];
         t_even = 16 + (R_TO_Y * R_even + G_TO_Y * G_even + B_TO_Y * B_even)/Y_NORM_FACTOR;
         Y[pixel_even] = (char) round(t_even > 255 ? 255 : t_even);
         t_Cb += (R_TO_CB * R_even + G_TO_CB * G_even + B_TO_CB * B_even);
         t_Cr += (R_TO_CR * R_even + G_TO_CR * G_even + B_TO_CR * B_even);
 
         // pixel 4
-        R_odd = data[i_odd++];
-        G_odd = data[i_odd++];
         B_odd = data[i_odd++];
+        G_odd = data[i_odd++];
+        R_odd = data[i_odd++];
         t_odd = 16 + (R_TO_Y * R_odd + G_TO_Y * G_odd + B_TO_Y * B_odd)/Y_NORM_FACTOR;
         Y[pixel_odd] = (char) round(t_odd > 255 ? 255 : t_odd);
         t_Cb += (R_TO_CB * R_odd + G_TO_CB * G_odd + B_TO_CB * B_odd);
@@ -111,12 +111,16 @@ int write_raw_image_data(char* filename, char* data, int size) {
 
 int main( int argc, char** argv) {
   printf("RGB to YCbCr: Simple Conversion\n");
+  bitmap_image* image;
+  if(argc==2) {
+    image = bmp_load(argv[1]);
+  } else {
+    printf("No input image specified");
+    return 0;
+  }
 
-  bitmap_image* image = bmp_load("./input/tiger.bmp");
-
-
-  unsigned int nrows = image->header.width;
-  unsigned int ncols = image->header.height;
+  unsigned int nrows = image->header.height;
+  unsigned int ncols = image->header.width;
   unsigned int npixels = nrows * ncols;
   char data2x4[32] = {
     0x20,0x30,0x40,0x20,0x30,0x40,0x00,0x00,
