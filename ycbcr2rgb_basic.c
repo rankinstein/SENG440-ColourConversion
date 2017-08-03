@@ -13,7 +13,7 @@
 #define Y_NORM_FACTOR (256)
 
 //TODO: TEST ME
-char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n_small_cols) {
+unsigned char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n_small_cols) {
   unsigned int n_big_rows = n_small_rows << 1;
   unsigned int n_big_cols = n_small_cols << 1;
   unsigned char* c_big = malloc(sizeof(char)*n_big_rows*n_big_cols);
@@ -84,7 +84,7 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
 }
 
 //TODO: TEST ME
-void convert_ycbcr_to_rgb(char * __restrict y, char * __restrict cb, char * __restrict cr, char * __restrict rgb, unsigned int nrows, unsigned int ncols)
+void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols)
 {
   unsigned int size = nrows*ncols*3;
   unsigned int row_padding = 2;
@@ -118,13 +118,14 @@ int write_hex_data(char* filename, unsigned char* data, unsigned int n_bytes) {
   FILE* fp = fopen(filename, "w");
   if (!fp) {
     printf("Unable to open file\n");
-    return 0;
+    return 1;
   }
   printf("writing hex data...\n");
   fwrite(data, n_bytes, 1, fp);
   printf("closing file...\n");
   fclose(fp);
   printf("finished writing file");
+  return 0;
 }
 
 //TODO: TEST ME
@@ -189,9 +190,9 @@ int main( int argc, char** argv) {
     0x66,0x44,0x22,0x00
   };
 
-  char* cb_up = malloc(sizeof(char)*nrows*ncols);
+  unsigned char* cb_up = malloc(sizeof(unsigned char)*nrows*ncols);
   cb_up = upsample(test_cb_data, nrows >> 1, ncols >> 1);
-  char* cr_up = malloc(sizeof(char)*ncols*nrows);
+  unsigned char* cr_up = malloc(sizeof(unsigned char)*ncols*nrows);
   cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
   convert_ycbcr_to_rgb(test_y_data, cb_up, cr_up, rgb, nrows, ncols);
 
