@@ -37,7 +37,6 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
 
       col++;
     }
-    printf("\n");
 
     row++;
   }
@@ -76,9 +75,6 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
   small_i = n_small_rows*n_small_cols - 1;
   big_i   = (n_big_rows - 1)*(n_big_cols) - 2;
 
-  printf("%d\n", small_i);
-  printf("%d %d %d %d\n", big_i, big_i + 1, big_i + n_big_cols, big_i + n_big_cols + 1);
-
   c_big[big_i]                  = c_small[small_i];
   c_big[big_i + 1]              = c_small[small_i];
   c_big[big_i + n_big_cols]     = c_small[small_i];
@@ -88,51 +84,47 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
 }
 
 //TODO: TEST ME
-void convert_ycbcr_to_rgb(char * __restrict Y, char * __restrict Cb, char * __restrict Cr, char * __restrict RGB, unsigned int nrows, unsigned int ncols)
+void convert_ycbcr_to_rgb(char * __restrict y, char * __restrict cb, char * __restrict cr, char * __restrict rgb, unsigned int nrows, unsigned int ncols)
 {
-  unsigned int row = 0;
-  unsigned int col;
-  unsigned int i_even = 0;
-  unsigned int i_odd = ncols*3 + (ncols & 3);
-  unsigned int pixel = 0;
-  unsigned int pixel_even = 0;
+  unsigned int size = nrows*ncols*3;
+  unsigned int row_padding = 2;
+  unsigned int rgb_i = 0;
+  unsigned int ycc_i = 0;
 
-  while (1){}
+  while (ycc_i < size) {
+    rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_R*(cr[ycc_i] - 128));
+    rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_G*(cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
+    rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CB_TO_B*(cb[ycc_i] - 128));
+    ycc_i++;
+  }
+
+  printf("while complete\n");
+
+  // unsigned int i;
+  // printf("size: %d\n", size);
+  // for (i = 0; i < size; i++) {
+  //   printf("0x%x ", rgb[i]);
+  //   if (i % 3 == 0) printf("- ");
+  //   if (i % 24 == 0) printf("\n");
+  // }
 
 }
 
-//TODO: convert this to something useful for debugging
-void print_triple_char(char* v1, int v1_size, char* v2, int v2_size, char* v3, int v3_size) {
-  int i;
-  for(i=0; i < v1_size; i++){
-    printf("v1[%d] = %u\n", i, (unsigned char) v1[i]);
-  }
-  for(i=0; i < v2_size; i++){
-    printf("v2[%d] = %u\n", i, (unsigned char) v2[i]);
-  }
-  for(i=0; i < v3_size; i++){
-    printf("v3[%d] = %u\n", i, (unsigned char) v3[i]);
-  }
-}
+int write_hex_data(char* filename, unsigned char* data, unsigned int n_bytes) {
 
-//TODO: convert this to write_bitmap_file
-int write_raw_image_data(char* filename, char* data, int size) {
+  printf("filename: %s\nsize: %d\n", filename, n_bytes);
+
+  printf("opening file...\n");
   FILE* fp = fopen(filename, "w");
-  if(!fp) {
-    printf("Error opening file (%s) to write to\n", filename);
+  if (!fp) {
+    printf("Unable to open file\n");
     return 0;
   }
-  fwrite(data, 1, size, fp);
-  fclose(fp);
-  return 1;
-}
-
-int write_hex_data(unsigned char* data, unsigned int n_bytes, char* filename) {
-  // printf("Start: write_hex_data\n");
-  FILE* fp = fopen(filename, "w");
+  printf("writing hex data...\n");
   fwrite(data, n_bytes, 1, fp);
+  printf("closing file...\n");
   fclose(fp);
-  // printf("End: write_hex_data\n");
+  printf("finished writing file");
 }
 
 //TODO: TEST ME
@@ -170,13 +162,10 @@ int main( int argc, char** argv) {
   unsigned int ncols  = (unsigned int)atoi(argv[1]);
   unsigned int nrows = (unsigned int)atoi(argv[2]);
 
-  // printf("allocate for RGB\n");
   unsigned char* rgb = (unsigned char*)malloc(3*sizeof(unsigned char)*nrows*ncols);
 
   //TODO: save info to header
 
-  //unsigned int npixels = nrows * ncols;
-  // printf("initialize test data\n");
   unsigned char test_y_data[64] = {
     0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
     0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
@@ -200,22 +189,22 @@ int main( int argc, char** argv) {
     0x66,0x44,0x22,0x00
   };
 
-  // printf("allocate for cb_up\n");
   char* cb_up = malloc(sizeof(char)*nrows*ncols);
   cb_up = upsample(test_cb_data, nrows >> 1, ncols >> 1);
-  write_hex_data(cb_up, 64, "upsample/cb_up");
-  // char* cr_up = malloc(sizeof(char)*ncols*nrows);
-  // cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
-  // write_hex_data(cb_up, 32, "upsample/cr_up");
-  // convert_ycbcr_to_rgb(test_y_data, test_cb_data, test_cr_data, rgb, nrows, ncols);
+  char* cr_up = malloc(sizeof(char)*ncols*nrows);
+  cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
+  convert_ycbcr_to_rgb(test_y_data, cb_up, cr_up, rgb, nrows, ncols);
 
+  write_hex_data("upsample/cb_up", cb_up, 64);
+  free(cb_up);
+  // write_hex_data("upsample/cr_up", cr_up, 64);
+  free(cr_up);
+  // write_hex_data("upsample/RGB_out", rgb, 192);
 
-  // write_raw_image_data("RGB_out.bmp", Y, npixels);
-
-  // free(Y);
-  // free(Cb);
-  // free(Cr);
-  // free(RGB);
+  // free(test_y_data);
+  // free(test_cb_data);
+  // free(test_cr_data);
+  free(rgb);
   return (0);
 }
 
