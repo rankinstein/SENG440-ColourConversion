@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <math.h>
 /* #include <arm_neon.h> */
 
@@ -84,8 +85,7 @@ unsigned char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsig
 }
 
 //TODO: TEST ME
-void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols)
-{
+void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols) {
   bool must_pad = (ncols & 0x0003) != 0x0000;
   unsigned int size = nrows*ncols;
   unsigned int last_in_row = ncols;
@@ -106,27 +106,50 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
     }
     last_in_row += ncols;
   }
-
-  // unsigned int i;
-  // size = size*3;
-  // printf("size: %d\n", size);
-  // for (i = 0; i < size; i++) {
-  //   if (i % 24 == 0) printf("\n");
-  //   printf("%x ", rgb[i]);
-  //   if (i % 3 == 2) printf("- ");
-  // }
-  // printf("\n");
-
 }
 
-int write_hex_data(char* filename, unsigned char* data, unsigned int length) {
+bitmap_header* compose_header(unsigned int width, unsigned int height, unsigned int bitmap_size) {
+  bitmap_header* header = malloc(sizeof(bitmap_header));
+  strcpy(header->fileheader.filetype, "BM");
+  header->fileheader.filesize = bitmap_size + 54;
+  header->fileheader.reserved1 = 0;
+  header->fileheader.reserved2 = 0;
+  header->fileheader.dataoffset = 54;
+
+  header->headersize = 40;
+  header->width = width;
+  header->height = height;
+  header->planes = 1;
+  header->bitsperpixel = 24;
+  header->compression = 0;
+  header->bitmapsize = bitmap_size;
+  header->horizontalres = 0;
+  header->verticalres = 0;
+  header->numcolors = 0;
+  header->importantcolors = 0;
+
+  return header;
+}
+
+int write_rgb_bitmap(char* filename, bitmap_header* header, unsigned char* bitmap, unsigned int bitmap_size) {
+  FILE* fp = fopen(filename, "wb");
+  if (!fp) {
+    printf("Unable to open file\n");
+    return 1;
+  }
+  fwrite(header, sizeof(bitmap_header), 1, fp);
+  fwrite(bitmap, sizeof(unsigned char), bitmap_size, fp);
+  return 0;
+}
+
+int write_hex_data(char* filename, unsigned char* data, unsigned int bitmap_size) {
 
   FILE* fp = fopen(filename, "wb");
   if (!fp) {
     printf("Unable to open file\n");
     return 1;
   }
-  fwrite(data, sizeof(unsigned char), length, fp);
+  fwrite(data, sizeof(unsigned char), bitmap_size, fp);
   fclose(fp);
   return 0;
 }
@@ -168,13 +191,13 @@ int main( int argc, char** argv) {
 
   //determine file size, accounting for padding
   bool must_pad = (ncols & 0x0003) != 0x0000;
-  unsigned int file_size = must_pad ?
+  unsigned int bitmap_size = must_pad ?
     3*sizeof(unsigned char)*nrows*ncols + 2*sizeof(unsigned char)*nrows :
     3*sizeof(unsigned char)*nrows*ncols;
 
-    printf("file_size: %d\n", file_size);
+    printf("file_size: %d\n", bitmap_size);
 
-  unsigned char* rgb = (unsigned char*)malloc(file_size);
+  unsigned char* rgb = (unsigned char*)malloc(bitmap_size);
 
   //TODO: save info to header
 
@@ -234,11 +257,10 @@ int main( int argc, char** argv) {
   free(cb_up);
   // write_hex_data("upsample/cr_up", cr_up, 64);
   free(cr_up);
-  write_hex_data("upsample/RGB_8x8_out", rgb, file_size);
+  // write_hex_data("upsample/RGB_8x8_out", rgb, bitmap_size);
 
-  // free(test_y_data);
-  // free(test_cb_data);
-  // free(test_cr_data);
+  write_rgb_bitmap("RGB_OUT.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
+
   free(rgb);
   return (0);
 }
