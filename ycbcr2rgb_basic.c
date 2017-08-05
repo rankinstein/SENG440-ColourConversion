@@ -94,53 +94,20 @@ float clamp_value(float f) {
   return f;
 }
 
-//TODO: TEST ME
 void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols) {
   bool must_pad = (ncols & 0x0003) != 0x0000;
   unsigned int size = nrows*ncols;
   unsigned int last_in_row = ncols;
   unsigned int rgb_i = 0;
   unsigned int ycc_i = 0;
-  // unsigned int ycc_i = 8;
-
-  // FILE* fp = fopen("results.txt", "w");
 
   while (ycc_i < size) {
-  // while (ycc_i < 10) {
     while (ycc_i < last_in_row) {
 
-      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
-      // printf("rgb_i=%d ycc_i=%d  B=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
-      rgb_i++;
-
-      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_G*((float)cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
-      // printf("rgb_i=%d ycc_i=%d  G=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
-      rgb_i++;
-
-      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_R*((float)cr[ycc_i] - 128));
-      // printf("rgb_i=%d ycc_i=%d  R=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
-      rgb_i++;
-
-      // fprintf(fp, "\n");
-
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_G*((float)cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_R*((float)cr[ycc_i] - 128));
       ycc_i++;
-
-      // printf("Y = %d, Cb = %d, Cr = %d\n", y[ycc_i], cb[ycc_i], cr[ycc_i]);
-      // printf("Y = %f, Cb = %f, Cr = %f\n", (float)y[ycc_i], (float)cb[ycc_i], (float)cr[ycc_i]);
-      // printf("Y - 16 = %f, Cb - 128 = %f\n", ((float)y[ycc_i] - 16), CR_TO_G*((float)cr[ycc_i] - 128));
-      // printf("1.164*(Y - 16) = %f, 2.018*(Cb - 128) = %f\n", Y_TO_RGB*((float)y[ycc_i] - 16), CB_TO_B*((float)cb[ycc_i] - 128));
-      // printf("B = %f", (Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128)));
-      // float temp_f = (Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
-      // unsigned char temp_uc = (unsigned char) temp_f;
-
-      // rgb[rgb_i] = (unsigned char)(Y_TO_RGB*((float)y[222] - 16) + CB_TO_B*((float)cb[222] - 128));
-      // printf("%x %x\n", y[222], cb[222]);
-      // printf("temp_uc: %d\n", rgb[rgb_i]);
-      // printf("temp_uc: %x\n", rgb[rgb_i]);
-      //
-      // write_hex_data("char_b", rgb, 1);
-      // write_hex_data("float_b", rgb, 4);
-
     }
     //add padding
     if (must_pad) {
@@ -149,8 +116,6 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
     }
     last_in_row += ncols;
   }
-
-  // fclose(fp);
 }
 
 bitmap_header* compose_header(unsigned int width, unsigned int height, unsigned int bitmap_size) {
@@ -222,7 +187,6 @@ unsigned char* make_greyscale_bitmap(unsigned char* data, unsigned int nrows, un
   return greyscale_bitmap;
 }
 
-//TODO: TEST ME
 unsigned char* raw_ycbcr_load(char* filename) {
   FILE* fp = fopen(filename, "rb");
   unsigned char* data;
@@ -266,9 +230,6 @@ int main( int argc, char** argv) {
     printf("file_size: %d\n", bitmap_size);
 
   unsigned char* rgb = (unsigned char*)malloc(bitmap_size);
-
-  //TODO: save info to header
-
   // unsigned char test_y_data[64] = {
   //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
   //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x00,0x99,
@@ -317,35 +278,15 @@ int main( int argc, char** argv) {
 
   unsigned char* cb_up = malloc(sizeof(unsigned char)*nrows*ncols);
   cb_up = upsample(cb, nrows >> 1, ncols >> 1);
-  unsigned char* cb_grey = make_greyscale_bitmap(cb_up, nrows, ncols);
-  write_bitmap("upsample/cb_upscale.bmp", compose_header(ncols, nrows, bitmap_size), cb_grey, bitmap_size);
 
   unsigned char* cr_up = malloc(sizeof(unsigned char)*ncols*nrows);
   cr_up = upsample(cr, nrows >> 1, ncols >> 1);
-  unsigned char* cr_grey = make_greyscale_bitmap(cr_up, nrows, ncols);
-  write_bitmap("upsample/cr_upscale.bmp", compose_header(ncols, nrows, bitmap_size), cr_grey, bitmap_size);
-
 
   convert_ycbcr_to_rgb(y, cb_up, cr_up, rgb, nrows, ncols);
-
-  // write_hex_data("upsample/cb_up", cb_up, 64);
-  free(cb_up);
-  // write_hex_data("upsample/cr_up", cr_up, 64);
-  free(cr_up);
-  // write_hex_data("upsample/RGB_8x8_out", rgb, bitmap_size);
-
   write_bitmap("RGB_OUT.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
 
+  free(cb_up);
+  free(cr_up);
   free(rgb);
   return (0);
 }
-
-
-/*
-open raw Y file
-copy data
-open raw Cb file
-copy data
-open raw Cr file
-copy data
-*/
