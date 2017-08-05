@@ -84,6 +84,16 @@ unsigned char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsig
   return c_big;
 }
 
+float clamp_value(float f) {
+  if (f < 0) {
+    return 0;
+  }
+  if (f > 255) {
+    return 255;
+  }
+  return f;
+}
+
 //TODO: TEST ME
 void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols) {
   bool must_pad = (ncols & 0x0003) != 0x0000;
@@ -91,13 +101,46 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
   unsigned int last_in_row = ncols;
   unsigned int rgb_i = 0;
   unsigned int ycc_i = 0;
+  // unsigned int ycc_i = 8;
+
+  // FILE* fp = fopen("results.txt", "w");
 
   while (ycc_i < size) {
+  // while (ycc_i < 10) {
     while (ycc_i < last_in_row) {
-      rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_R*(cr[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_G*(cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)(Y_TO_RGB*(y[ycc_i] - 16) + CB_TO_B*(cb[ycc_i] - 128));
+
+      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
+      // printf("rgb_i=%d ycc_i=%d  B=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
+      rgb_i++;
+
+      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_G*((float)cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
+      // printf("rgb_i=%d ycc_i=%d  G=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
+      rgb_i++;
+
+      rgb[rgb_i] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_R*((float)cr[ycc_i] - 128));
+      // printf("rgb_i=%d ycc_i=%d  R=%x  Y=%x Cb=%x Cr=%x\n", rgb_i, ycc_i, rgb[rgb_i], y[ycc_i], cb[ycc_i], cr[ycc_i]);
+      rgb_i++;
+
+      // fprintf(fp, "\n");
+
       ycc_i++;
+
+      // printf("Y = %d, Cb = %d, Cr = %d\n", y[ycc_i], cb[ycc_i], cr[ycc_i]);
+      // printf("Y = %f, Cb = %f, Cr = %f\n", (float)y[ycc_i], (float)cb[ycc_i], (float)cr[ycc_i]);
+      // printf("Y - 16 = %f, Cb - 128 = %f\n", ((float)y[ycc_i] - 16), CR_TO_G*((float)cr[ycc_i] - 128));
+      // printf("1.164*(Y - 16) = %f, 2.018*(Cb - 128) = %f\n", Y_TO_RGB*((float)y[ycc_i] - 16), CB_TO_B*((float)cb[ycc_i] - 128));
+      // printf("B = %f", (Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128)));
+      // float temp_f = (Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
+      // unsigned char temp_uc = (unsigned char) temp_f;
+
+      // rgb[rgb_i] = (unsigned char)(Y_TO_RGB*((float)y[222] - 16) + CB_TO_B*((float)cb[222] - 128));
+      // printf("%x %x\n", y[222], cb[222]);
+      // printf("temp_uc: %d\n", rgb[rgb_i]);
+      // printf("temp_uc: %x\n", rgb[rgb_i]);
+      //
+      // write_hex_data("char_b", rgb, 1);
+      // write_hex_data("float_b", rgb, 4);
+
     }
     //add padding
     if (must_pad) {
@@ -106,6 +149,8 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
     }
     last_in_row += ncols;
   }
+
+  // fclose(fp);
 }
 
 bitmap_header* compose_header(unsigned int width, unsigned int height, unsigned int bitmap_size) {
@@ -123,15 +168,15 @@ bitmap_header* compose_header(unsigned int width, unsigned int height, unsigned 
   header->bitsperpixel = 24;
   header->compression = 0;
   header->bitmapsize = bitmap_size;
-  header->horizontalres = 0;
-  header->verticalres = 0;
+  header->horizontalres = 2835;
+  header->verticalres = 2835;
   header->numcolors = 0;
   header->importantcolors = 0;
 
   return header;
 }
 
-int write_rgb_bitmap(char* filename, bitmap_header* header, unsigned char* bitmap, unsigned int bitmap_size) {
+int write_bitmap(char* filename, bitmap_header* header, unsigned char* bitmap, unsigned int bitmap_size) {
   FILE* fp = fopen(filename, "wb");
   if (!fp) {
     printf("Unable to open file\n");
@@ -154,6 +199,29 @@ int write_hex_data(char* filename, unsigned char* data, unsigned int bitmap_size
   return 0;
 }
 
+unsigned char* make_greyscale_bitmap(unsigned char* data, unsigned int nrows, unsigned int ncols) {
+
+  unsigned int size = nrows*ncols;
+  unsigned char* greyscale_bitmap = (unsigned char*)malloc(3*sizeof(unsigned char)*nrows*ncols + 2*sizeof(unsigned char)*nrows);
+  unsigned int data_i = 0,
+    grey_i = 0,
+    last_in_row = ncols;
+
+  while (data_i < size) {
+    while (data_i < last_in_row) {
+      greyscale_bitmap[grey_i++] = data[data_i];
+      greyscale_bitmap[grey_i++] = data[data_i];
+      greyscale_bitmap[grey_i++] = data[data_i];
+      data_i++;
+    }
+    greyscale_bitmap[grey_i++] = 0x00;
+    greyscale_bitmap[grey_i++] = 0x00;
+    last_in_row += ncols;
+  }
+
+  return greyscale_bitmap;
+}
+
 //TODO: TEST ME
 unsigned char* raw_ycbcr_load(char* filename) {
   FILE* fp = fopen(filename, "rb");
@@ -166,8 +234,8 @@ unsigned char* raw_ycbcr_load(char* filename) {
   file_size = ftell(fp) + 1;
   rewind(fp);
   data = (unsigned char*)malloc(file_size);
-  if(data == NULL) {
-    // printf("Error allocating memory\n");
+  if(!data) {
+    printf("Error allocating memory\n");
   }
   fread(data, file_size, 1, fp);
   fclose(fp);
@@ -181,9 +249,9 @@ int main( int argc, char** argv) {
     return 0;
   }
 
-  // unsigned char* y  = raw_ycbcr_load("./input/tiger.bmp");
-  // unsigned char* cb = raw_ycbcr_load("")
-  // unsigned char* cr = raw_ycbcr_load("")
+  unsigned char* y  = raw_ycbcr_load("out_Y");
+  unsigned char* cb = raw_ycbcr_load("out_Cb");
+  unsigned char* cr = raw_ycbcr_load("out_Cr");
 
   //Assumes height and width are positive and less than max signed int value
   unsigned int ncols  = (unsigned int)atoi(argv[1]);
@@ -224,34 +292,41 @@ int main( int argc, char** argv) {
   //   0x66,0x44,0x22,0x00
   // };
 
-  unsigned char test_y_data[48] = {
-    0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
-    0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
-    0x88,0x77,0x66,0x55,0x44,0x33,
-    0x88,0x77,0x66,0x55,0x44,0x33,
-    0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
-    0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
-    0x88,0x77,0x66,0x55,0x44,0x33,
-    0x88,0x77,0x66,0x55,0x44,0x33
-  };
-  unsigned char test_cb_data[12] = {
-    0xFF,0xDD,0xBB,
-    0x77,0x55,0x33,
-    0xEE,0xCC,0xAA,
-    0x66,0x44,0x22
-  };
-  unsigned char test_cr_data[16] = {
-    0xFF,0xDD,0xBB,
-    0x77,0x55,0x33,
-    0xEE,0xCC,0xAA,
-    0x66,0x44,0x22
-  };
+  // unsigned char test_y_data[48] = {
+  //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
+  //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
+  //   0x88,0x77,0x66,0x55,0x44,0x33,
+  //   0x88,0x77,0x66,0x55,0x44,0x33,
+  //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
+  //   0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,
+  //   0x88,0x77,0x66,0x55,0x44,0x33,
+  //   0x88,0x77,0x66,0x55,0x44,0x33
+  // };
+  // unsigned char test_cb_data[12] = {
+  //   0xFF,0xDD,0xBB,
+  //   0x77,0x55,0x33,
+  //   0xEE,0xCC,0xAA,
+  //   0x66,0x44,0x22
+  // };
+  // unsigned char test_cr_data[16] = {
+  //   0xFF,0xDD,0xBB,
+  //   0x77,0x55,0x33,
+  //   0xEE,0xCC,0xAA,
+  //   0x66,0x44,0x22
+  // };
 
   unsigned char* cb_up = malloc(sizeof(unsigned char)*nrows*ncols);
-  cb_up = upsample(test_cb_data, nrows >> 1, ncols >> 1);
+  cb_up = upsample(cb, nrows >> 1, ncols >> 1);
+  unsigned char* cb_grey = make_greyscale_bitmap(cb_up, nrows, ncols);
+  write_bitmap("upsample/cb_upscale.bmp", compose_header(ncols, nrows, bitmap_size), cb_grey, bitmap_size);
+
   unsigned char* cr_up = malloc(sizeof(unsigned char)*ncols*nrows);
-  cr_up = upsample(test_cr_data, nrows >> 1, ncols >> 1);
-  convert_ycbcr_to_rgb(test_y_data, cb_up, cr_up, rgb, nrows, ncols);
+  cr_up = upsample(cr, nrows >> 1, ncols >> 1);
+  unsigned char* cr_grey = make_greyscale_bitmap(cr_up, nrows, ncols);
+  write_bitmap("upsample/cr_upscale.bmp", compose_header(ncols, nrows, bitmap_size), cr_grey, bitmap_size);
+
+
+  convert_ycbcr_to_rgb(y, cb_up, cr_up, rgb, nrows, ncols);
 
   // write_hex_data("upsample/cb_up", cb_up, 64);
   free(cb_up);
@@ -259,7 +334,7 @@ int main( int argc, char** argv) {
   free(cr_up);
   // write_hex_data("upsample/RGB_8x8_out", rgb, bitmap_size);
 
-  write_rgb_bitmap("RGB_OUT.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
+  write_bitmap("RGB_OUT.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
 
   free(rgb);
   return (0);
