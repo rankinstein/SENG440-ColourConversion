@@ -16,7 +16,7 @@ LIBS = -lm
 DEFS = -DDEBUG_FLAG -DEXPERIMENTAL=0
 
 # The final executable program file, i.e. name of our program
-BIN = rgb2ycbcr_basic
+BIN = rgb2ycbcr_fixedpoint
 
 # Object files from which $BIN depends
 OBJS = bmp_operations.o
