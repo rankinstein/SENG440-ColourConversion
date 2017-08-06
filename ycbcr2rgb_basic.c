@@ -14,7 +14,7 @@
 #define CB_TO_B (2.018)
 #define Y_NORM_FACTOR (256)
 
-unsigned char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n_small_cols) {
+char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n_small_cols) {
   unsigned int n_big_rows = n_small_rows << 1;
   unsigned int n_big_cols = n_small_cols << 1;
   unsigned char* c_big = malloc(sizeof(char)*n_big_rows*n_big_cols);
@@ -104,9 +104,9 @@ void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restri
   while (ycc_i < size) {
     while (ycc_i < last_in_row) {
 
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CB_TO_B*((float)cb[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_G*((float)cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*((float)y[ycc_i] - 16) + CR_TO_R*((float)cr[ycc_i] - 128));
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CB_TO_B*(cb[ycc_i] - 128));
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_G*(cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
+      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_R*(cr[ycc_i] - 128));
       ycc_i++;
     }
     //add padding
