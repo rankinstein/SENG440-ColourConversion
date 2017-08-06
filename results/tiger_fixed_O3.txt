@@ -1,17 +1,11 @@
-# started on Sun Aug  6 08:06:43 2017
+# started on Sun Aug  6 08:25:39 2017
 
-
- Performance counter stats for './bin/rgb2ycbcr_vec_fixed_O3 ./input/tiger.bmp' (100 runs):
-
-        14,832,466      cpu-cycles                 ( +-  0.30% )
-        13,520,402      instructions              #    0.91  insns per cycle          ( +-  0.02% )
-           351,960      branches                                                      ( +-  0.11% )
-            28,415      branch-misses             #    8.07% of all branches          ( +-  0.32% )
-         22.306741      cpu-clock (msec)                                              ( +-  1.98% )
-               293      page-faults                                                   ( +-  0.02% )
-                 2      context-switches                                              ( +- 10.52% )
-         6,646,019      cache-references                                              ( +-  0.02% )
-            31,304      cache-misses              #    0.471 % of all cache refs      ( +-  0.28% )
-
-       0.025439058 seconds time elapsed                                          ( +-  1.67% )
-
+15867305,,cpu-cycles,0.10%
+13540695,,instructions,0.02%
+354079,,branches,0.08%
+29176,,branch-misses,0.23%
+13.268239,,cpu-clock,0.10%
+293,,page-faults,0.02%
+3,,context-switches,2.34%
+6656586,,cache-references,0.02%
+31681,,cache-misses,0.20%

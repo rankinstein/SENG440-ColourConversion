@@ -1,17 +1,11 @@
-# started on Sun Aug  6 08:07:16 2017
+# started on Sun Aug  6 08:26:15 2017
 
-
- Performance counter stats for './bin/rgb2ycbcr_vec_fixed_O2 ./input/marbles.bmp' (100 runs):
-
-        84,533,587      cpu-cycles                 ( +-  0.23% )
-        82,208,175      instructions              #    0.97  insns per cycle          ( +-  0.01% )
-         1,784,962      branches                                                      ( +-  0.05% )
-            75,261      branch-misses             #    4.22% of all branches          ( +-  0.23% )
-         80.881648      cpu-clock (msec)                                              ( +-  2.74% )
-             1,610      page-faults                                                   ( +-  0.00% )
-                 3      context-switches                                              ( +-  6.52% )
-        40,522,602      cache-references                                              ( +-  0.01% )
-           152,784      cache-misses              #    0.377 % of all cache refs      ( +-  0.15% )
-
-       0.119110807 seconds time elapsed                                          ( +-  4.20% )
-
+85678750,,cpu-cycles,0.05%
+82290977,,instructions,0.01%
+1797219,,branches,0.05%
+77075,,branch-misses,0.22%
+71.814100,,cpu-clock,0.37%
+1610,,page-faults,0.00%
+4,,context-switches,7.07%
+40552326,,cache-references,0.01%
+156637,,cache-misses,0.22%
