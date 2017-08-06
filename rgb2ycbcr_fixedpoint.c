@@ -106,7 +106,6 @@ int write_raw_image_data(char* filename, char* data, int size) {
 }
 
 int main( int argc, char** argv) {
-  printf("RGB to YCbCr: Simple Conversion\n");
   bitmap_image* image;
   if(argc==2) {
     image = bmp_load(argv[1]);
@@ -125,7 +124,7 @@ int main( int argc, char** argv) {
 
   rgb2ycbcr_fixedpoint(Y, Cb, Cr, image->data, nrows, ncols);
 
-  print_triple_char(Y, npixels, Cb, npixels/4, Cr, npixels/4);
+  // print_triple_char(Y, npixels, Cb, npixels/4, Cr, npixels/4);
 
   write_raw_image_data("out_Y", Y, npixels);
   write_raw_image_data("out_Cb", Cb, npixels/4);
