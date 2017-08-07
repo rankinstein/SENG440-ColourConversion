@@ -25,29 +25,61 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
   unsigned int n_big_rows = n_small_rows << 1;
   unsigned int n_big_cols = n_small_cols << 1;
   unsigned char* c_big = malloc(sizeof(char)*n_big_rows*n_big_cols);
-  unsigned int row = 0;
-  unsigned int col = 0;
-  unsigned int small_i;
-  unsigned int big_i;
+  // unsigned int row = 0;
+  // unsigned int col = 0;
+  // unsigned int small_i;
+  // unsigned int big_i;
+
+  //optimized method
+  unsigned int i = 0;
+  unsigned int col = 0
+  unsigned char* small_row_a = c_small;
+  unsigned char* small_row_b = c_small + n_small_cols;
+  unsigned char* big_row_a = c_big;
+  unsigned char* big_row_b = c_big + n_big_cols;
 
   //Pass 1: interpolate all but last 2 rows and last 2 cols.
-  while (row < n_small_rows - 1) {
+  while (i < n_small_rows - 1) {
     col = 0;
     while (col < n_small_cols - 1) {
 
       small_i = row*n_small_cols + col;
       big_i = (row << 1)*n_big_cols + (col << 1);
 
-      c_big[big_i]                  = c_small[small_i];
-      c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
-      c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
-      c_big[big_i + n_big_cols + 1] = (c_small[small_i] + c_small[small_i + n_small_cols + 1]) >> 1;
+      big_row_a[col < 1]      = small_row_a[col];
+      big_row_a[col < 1 + 1]  = (small_row_a[col] + small_row_a[col + 1]) >> 1;
+      big_row_b[col < 1]      = (small_row_a[col] + small_row_b[col]) >> 1;
+      big_row_b[col < 1 + 1]  = (small_row_a[col] + small_row_b[col + 1]) >> 1;
 
       col++;
     }
 
+    big_row_a += n_big_cols << 1;
+    big_row_b += n_big_cols << 1;
+    small_row_a = small_row_b;
+    small_row_b += n_small_cols;
+
     row++;
   }
+
+  //Pass 1: interpolate all but last 2 rows and last 2 cols.
+  // while (row < n_small_rows - 1) {
+  //   col = 0;
+  //   while (col < n_small_cols - 1) {
+  //
+  //     small_i = row*n_small_cols + col;
+  //     big_i = (row << 1)*n_big_cols + (col << 1);
+  //
+  //     c_big[big_i]                  = c_small[small_i];
+  //     c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
+  //     c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
+  //     c_big[big_i + n_big_cols + 1] = (c_small[small_i] + c_small[small_i + n_small_cols + 1]) >> 1;
+  //
+  //     col++;
+  //   }
+  //
+  //   row++;
+  // }
 
   // //Pass 2: interpolate last row, and copy pixes that can't be interpolated
   // row = n_small_rows - 1;
