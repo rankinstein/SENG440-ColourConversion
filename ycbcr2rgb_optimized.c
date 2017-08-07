@@ -49,44 +49,44 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
     row++;
   }
 
-  //Pass 2: interpolate last row, and copy pixes that can't be interpolated
-  row = n_small_rows - 1;
-  col = 0;
-  while (col < n_small_cols - 1) {
-    small_i = row*n_small_cols + col;
-    big_i   = (row << 1)*n_big_cols + (col << 1);
-
-    c_big[big_i]                  = c_small[small_i];
-    c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
-    c_big[big_i + n_big_cols]     = c_big[big_i] ;
-    c_big[big_i + n_big_cols + 1] = c_big[big_i + 1];
-
-    col++;
-  }
-
-  //Pass 3: interpolate last column, and copy pixes that can't be interpolated
-  row = 0;
-  col = n_small_cols - 1;
-  while (row < n_small_rows - 1) {
-    small_i = row*n_small_cols + col;
-    big_i   = (row << 1)*n_big_cols + (col << 1);
-
-    c_big[big_i]                  = c_small[small_i];
-    c_big[big_i + 1]              = c_small[small_i];
-    c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
-    c_big[big_i + n_big_cols + 1] = c_big[big_i + n_big_cols];
-
-    row++;
-  }
-
-  //Pass 4: copy corner values
-  small_i = n_small_rows*n_small_cols - 1;
-  big_i   = (n_big_rows - 1)*(n_big_cols) - 2;
-
-  c_big[big_i]                  = c_small[small_i];
-  c_big[big_i + 1]              = c_small[small_i];
-  c_big[big_i + n_big_cols]     = c_small[small_i];
-  c_big[big_i + n_big_cols + 1] = c_small[small_i];
+  // //Pass 2: interpolate last row, and copy pixes that can't be interpolated
+  // row = n_small_rows - 1;
+  // col = 0;
+  // while (col < n_small_cols - 1) {
+  //   small_i = row*n_small_cols + col;
+  //   big_i   = (row << 1)*n_big_cols + (col << 1);
+  //
+  //   c_big[big_i]                  = c_small[small_i];
+  //   c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
+  //   c_big[big_i + n_big_cols]     = c_big[big_i] ;
+  //   c_big[big_i + n_big_cols + 1] = c_big[big_i + 1];
+  //
+  //   col++;
+  // }
+  //
+  // //Pass 3: interpolate last column, and copy pixes that can't be interpolated
+  // row = 0;
+  // col = n_small_cols - 1;
+  // while (row < n_small_rows - 1) {
+  //   small_i = row*n_small_cols + col;
+  //   big_i   = (row << 1)*n_big_cols + (col << 1);
+  //
+  //   c_big[big_i]                  = c_small[small_i];
+  //   c_big[big_i + 1]              = c_small[small_i];
+  //   c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
+  //   c_big[big_i + n_big_cols + 1] = c_big[big_i + n_big_cols];
+  //
+  //   row++;
+  // }
+  //
+  // //Pass 4: copy corner values
+  // small_i = n_small_rows*n_small_cols - 1;
+  // big_i   = (n_big_rows - 1)*(n_big_cols) - 2;
+  //
+  // c_big[big_i]                  = c_small[small_i];
+  // c_big[big_i + 1]              = c_small[small_i];
+  // c_big[big_i + n_big_cols]     = c_small[small_i];
+  // c_big[big_i + n_big_cols + 1] = c_small[small_i];
 
   return c_big;
 }
