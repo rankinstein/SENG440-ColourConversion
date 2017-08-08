@@ -1,0 +1,11 @@
+# started on Sun Aug  6 08:23:34 2017
+
+70985283,,cpu-cycles,0.04%
+40973867,,instructions,0.03%
+1607478,,branches,0.08%
+32767,,branch-misses,0.50%
+59.423959,,cpu-clock,0.40%
+299,,page-faults,0.02%
+3,,context-switches,8.34%
+16016936,,cache-references,0.04%
+35448,,cache-misses,0.36%
