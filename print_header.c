@@ -44,7 +44,7 @@ int print_header(char* input) {
     fread(hp, sizeof(bitmap_header), 1, fp);
 
     //print file information
-    printf("filesize: %d\ndataoffset: %d\nheadersize: %d\nwidth: %d\nheight: %d\nplanes: %d\nbitsperpixel: %d\nbitmap size: %d\nhorizontal resolution: %d\nvertical resolution: %d\nnumcolors: %d\nimportantcolors: %d\n", hp->fileheader.filesize, hp->fileheader.dataoffset, hp->headersize, hp->width, hp->height, hp->planes,hp->bitsperpixel, hp->bitmapsize, hp->horizontalres, hp->verticalres, hp->numcolors, hp->importantcolors);
+    printf("filesize: %d\ndataoffset: %d\nheadersize: %d\nwidth: %d\nheight: %d\nplanes: %d\nbitsperpixel: %d\ncompression: %d\nbitmap size: %d\nhorizontal resolution: %d\nvertical resolution: %d\nnumcolors: %d\nimportantcolors: %d\n", hp->fileheader.filesize, hp->fileheader.dataoffset, hp->headersize, hp->width, hp->height, hp->planes,hp->bitsperpixel, hp->compression, hp->bitmapsize, hp->horizontalres, hp->verticalres, hp->numcolors, hp->importantcolors);
 
     fclose(fp);
     free(hp);
