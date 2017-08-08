@@ -43,13 +43,11 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
   printf("n_big_rows:   %d\n", n_big_rows);
   printf("n_big_cols:   %d\n", n_big_cols);
 
+  //Method 1: seperate array pointers
   //Pass 1: interpolate all but last 2 rows and last 2 cols.
   while (i < n_small_rows - 1) {
-
-
     col = 0;
     while (col < n_small_cols - 1) {
-      // printf("%d %d\n", col << 1, (col << 1) + 1);
 
       big_row_a[col << 1]       = small_row_a[col];
       big_row_a[(col << 1) + 1] = (small_row_a[col] + small_row_a[col + 1]) >> 1;
@@ -59,11 +57,6 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
       col++;
     }
 
-    // big_row_a = big_row_a + 1;
-    // big_row_b = big_row_b + 1;
-    // small_row_a = small_row_a + 1;
-    // small_row_b = small_row_b + 1;
-
     big_row_a += n_big_cols << 1;
     big_row_b += n_big_cols << 1;
     small_row_a = small_row_b;
@@ -72,6 +65,7 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
     i++;
   }
 
+  //Method 2: singlular array pointer
   //Pass 1: interpolate all but last 2 rows and last 2 cols.
   // while (row < n_small_rows - 1) {
   //   col = 0;
