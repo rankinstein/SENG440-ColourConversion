@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-/* #include <arm_neon.h> */
+#include <arm_neon.h>
 
 #include "bmp_operations.h"
 
-#define R_TO_Y (0x8819) // scale factor 2^9
-#define G_TO_Y (0x810F) // scale factor 2^8
-#define B_TO_Y (0xCF8F) // scale factor 2^11
+#define R_TO_Y (0x440C) // scale factor 2^8
+#define G_TO_Y (0x4087) // scale factor 2^7
+#define B_TO_Y (0x67C7) // scale factor 2^10
 #define R_TO_CB ((short int) 0xB41C) // scale factor 2^9
 #define G_TO_CB ((short int) 0xB582) // scale factor 2^8
 #define B_TO_CB ((short int) 0x6F70) // scale factor 2^8
@@ -25,15 +25,53 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
     unsigned int i_odd = ncols*3 + (ncols & 3);
     unsigned int pixel = 0;
     unsigned int pixel_even = 0;
+    int16x4_t r_to_y = vdup_n_s16(R_TO_Y);
+    int16x4_t g_to_y = vdup_n_s16(G_TO_Y);
+    int16x4_t b_to_y = vdup_n_s16(B_TO_Y);
+    int16x4_t r_to_cb = vdup_n_s16(R_TO_CB);
+    int16x4_t g_to_cb = vdup_n_s16(G_TO_CB);
+    int16x4_t b_to_cb = vdup_n_s16(B_TO_CB);
+    int16x4_t r_to_cr = vdup_n_s16(R_TO_CR);
+    int16x4_t g_to_cr = vdup_n_s16(G_TO_CR);
+    int16x4_t b_to_cr = vdup_n_s16(B_TO_CR);
+    int32x4_t offset_y = vdupq_n_s32(0x10 << 15);
     while(row < nrows) {
       col = 0;
       while(col < ncols) {
         unsigned char R_even, G_even, B_even, R_odd, G_odd, B_odd;
         int t_Cb, t_Cr;
+	uint8x8x3_t rgb_even = vld3_u8(&data[i_even]);
+	uint8x8x3_t rgb_odd = vld3_u8(&data[i_odd]);
+	int32x4_t temp;
+        int16x4_t Y_even;
+	int32x4_t Cb_temp;
+	int32x4_t Cr_temp;
+        int16x4_t red_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[2])));
+        int16x4_t green_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[1])));
+        int16x4_t blue_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[0])));
+	temp = vmull_s16(blue_even, b_to_y);
+        temp = vshrq_n_s32(temp, 2);
+	temp = vmlal_s16(temp, red_even, r_to_y);
+        temp = vshrq_n_s32(temp, 1);
+        temp = vmlal_s16(temp, green_even, g_to_y);
+        temp = vaddq_s32(temp, offset_y);
+        Y_even = vshrn_n_s32(temp, 15);
+
+	temp = vmull_s16(red_even, r_to_cb);
+        temp = vshrq_n_s32(temp, 1);
+	temp = vmlal_s16(temp, green_even, g_to_cb);
+	Cb_temp = vmlal_s16(temp, blue_even, b_to_cb);
+
+	temp = vmull_s16(blue_even, b_to_cr);
+	temp = vshrq_n_s32(temp, 2);
+	temp = vmlal_s16(temp, green_even, g_to_cr);
+	Cr_temp = vmlal_s16(temp, red_even, r_to_cr);
+
+
         B_even = data[i_even++];
         G_even = data[i_even++];
         R_even = data[i_even++];
-        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x8000) >> 16));
+        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x4000) >> 15));
         t_Cb = (((R_TO_CB * R_even) >> 1) + (G_TO_CB * G_even + B_TO_CB * B_even));
         t_Cr = ((R_TO_CR * R_even + G_TO_CR * G_even) + ((B_TO_CR * B_even) >> 2));
 
@@ -41,7 +79,7 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
         B_odd = data[i_odd++];
         G_odd = data[i_odd++];
         R_odd = data[i_odd++];
-        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x8000) >> 16));
+        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x4000) >> 15));
         t_Cb += (((R_TO_CB * R_odd) >> 1) + (G_TO_CB * G_odd + B_TO_CB * B_odd));
         t_Cr += ((R_TO_CR * R_odd + G_TO_CR * G_odd) + ((B_TO_CR * B_odd) >> 2));
 
@@ -52,7 +90,7 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
         B_even = data[i_even++];
         G_even = data[i_even++];
         R_even = data[i_even++];
-        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x8000) >> 16));
+        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x4000) >> 15));
         t_Cb += (((R_TO_CB * R_even) >> 1) + (G_TO_CB * G_even + B_TO_CB * B_even));
         t_Cr += ((R_TO_CR * R_even + G_TO_CR * G_even) + ((B_TO_CR * B_even) >> 2));
 
@@ -60,7 +98,7 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
         B_odd = data[i_odd++];
         G_odd = data[i_odd++];
         R_odd = data[i_odd++];
-        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x8000) >> 16));
+        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x4000) >> 15));
         t_Cb += (((R_TO_CB * R_odd) >> 1) + (G_TO_CB * G_odd + B_TO_CB * B_odd));
         t_Cr += ((R_TO_CR * R_odd + G_TO_CR * G_odd) + ((B_TO_CR * B_odd) >> 2));
 

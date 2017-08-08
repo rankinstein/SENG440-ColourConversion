@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-/* #include <arm_neon.h> */
+#include <arm_neon.h>
 
 #include "bmp_operations.h"
 

@@ -45,22 +45,23 @@ raw2bmp:
 
 bins:
 	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic -lm
-	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic -lm -ftree-vectorize
+	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
 	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O1 -lm
-	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O1 -lm -ftree-vectorize
+	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O1 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
 	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O2 -lm
-	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O2 -lm -ftree-vectorize
+	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O2 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
 	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O3 -lm
-	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O3 -lm -ftree-vectorize
+	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O3 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
 
 	$(CC) ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed
-	$(CC) ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed -ftree-vectorize
+	$(CC) ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
 	$(CC) -O1 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O1
-	$(CC) -O1 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O1 -ftree-vectorize
+	$(CC) -O1 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O1 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
 	$(CC) -O2 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O2
-	$(CC) -O2 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O2 -ftree-vectorize
+	$(CC) -O2 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O2 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
 	$(CC) -O3 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O3
-	$(CC) -O3 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O3 -ftree-vectorize
+	$(CC) -O3 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O3 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
+
 
 perf:
 	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/tiger_basic.txt ./bin/rgb2ycbcr_basic ./input/tiger.bmp
