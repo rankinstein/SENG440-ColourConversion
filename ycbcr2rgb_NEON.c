@@ -3,15 +3,16 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-/* #include <arm_neon.h> */
+#include <arm_neon.h>
 
 #include "bmp_operations.h"
 
-#define Y_TO_RGB (1.164)
-#define CR_TO_R (1.596)
-#define CR_TO_G (-0.813)
-#define CB_TO_G (-0.391)
-#define CB_TO_B (2.018)
+
+#define Y_TO_RGB ((short int) 9535)  // scale factor 2^-13
+#define CR_TO_R  ((short int) 13074) // scale factor 2^-13
+#define CR_TO_G  ((short int) -6660) // scale factor 2^-13
+#define CB_TO_G  ((short int) -3202) // scale factor 2^-13
+#define CB_TO_B  ((short int) 16531) // scale factor 2^-13
 
 // Converts an array of Cb or Cr values from 1:4 C values per Y to a 1:1 ratio.
 // See report for details on this algorithm.
@@ -96,24 +97,11 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
   return c_big;
 }
 
-// Clamps the value of f between [0 - 255].  Used before casting the 32-bit int
-// as an unsigned char.  Prevents rollover that dramatically changes pixel colour
-//  Params:
-//    f - a floating point number
-//  Returns a floating point value in the range [0 - 255]
-float clamp_value(float f) {
-  if (f < 0) {
-    return 0;
-  }
-  if (f > 255) {
-    return 255;
-  }
-  return f;
-}
-
 // Creates a valid rgb bitmap from Y, Cb, Cr data.  Adds appropriate padding.
 // y, cb, and cr are of equal length, with cb and cr having been upsampled before
 // this function is called
+//  Assumptions:
+//    1) width of image is a multpiple of 8 pixels, requiring no padding.
 //  Params:
 //    y - array of y values
 //    cb - array of cb values
@@ -122,26 +110,75 @@ float clamp_value(float f) {
 //    nrows - pixel height of output bitmap
 //    ncols - pixel width of output bitmap
 void convert_ycbcr_to_rgb(unsigned char * __restrict y, unsigned char * __restrict cb, unsigned char * __restrict cr, unsigned char * __restrict rgb, unsigned int nrows, unsigned int ncols) {
-  bool must_pad = (ncols & 0x0003) != 0x0000;
+
+  unsigned int i=0, j;
   unsigned int size = nrows*ncols;
-  unsigned int last_in_row = ncols;
-  unsigned int rgb_i = 0;
-  unsigned int ycc_i = 0;
 
-  while (ycc_i < size) {
-    while (ycc_i < last_in_row) {
+  uint8x8_t  y_off = vdupq_n_u8(16);
+  int16x8_t c_off = vdupq_n_s8(128);
 
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CB_TO_B*(cb[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_G*(cr[ycc_i] - 128) + CB_TO_G*(cb[ycc_i] - 128));
-      rgb[rgb_i++] = (unsigned char)clamp_value(Y_TO_RGB*(y[ycc_i] - 16) + CR_TO_R*(cr[ycc_i] - 128));
-      ycc_i++;
+  int16x4_t y_to_rgb = vdup_n_s16(Y_TO_RGB);
+  int16x4_t cr_to_r  = vdup_n_s16(CR_TO_R);
+  int16x4_t cr_to_g  = vdup_n_s16(CR_TO_G);
+  int16x4_t cb_to_g  = vdup_n_s16(CB_TO_G);
+  int16x4_t cb_to_b  = vdup_n_s16(CB_TO_B);
+
+  uint8x8_t vy, vcb, vcr;
+  uint16x8_t temp_uint_8_16;
+  int16x8_t temp_sint_8_16;
+  int32x4_t v_low, v_high, cr_low, cr_high, cb_low, cb_high;
+
+  uint8x8x3_t result;
+
+  while (i < size) {
+    while (j < ncols) {
+      // Y (used in all 3)
+      vy = vldl_u8(&y[i + j]);
+      vy = vsub_u8(vy, y_off);
+      temp_sint_8_16 = vreinterpretq_s16_u16(temp_u_8_16 = vmovl_u8(vy));
+      v_low  = vmull_s16(y_to_rgb, vget_low_s16(temp_sint_8_16));
+      v_high = vmull_s16(y_to_rgb, vget_high_s16(temp_sint_8_16));
+
+      // CR to R
+      vcr = vldl_u8(&cr[i + j]);
+      temp_sint_8_16 = vreinterpretq_s16_u16(temp_u_8_16 = vmovl_u8(vcr));
+      temp_sint_8_16 = vsub_u8(temp_sint_8_16, c_off);
+      cr_low  = vmull_s16(cr_to_r, vget_low_s16(temp_sint_8_16));
+      cr_high = vmull_s16(cr_to_r, vget_high_s16(temp_sint_8_16));
+
+      temp_sint_8_16 = vcombine_s16(vshrn_n_s32(vqadd_s32(v_low, cr_low), 13), vshrn_n_s32(vqadd_s32(v_high, cr_high), 13));
+      result.val[2] = vqmovun_s16(temp_sint_8_16));
+
+      // CB to B
+      vcb = vldl_u8(&cb[i + j]);
+      temp_sint_8_16 = vreinterpretq_s16_u16(temp_u_8_16 = vmovl_u8(vcb));
+      temp_sint_8_16 = vsub_u8(temp_sint_8_16, c_off);
+      cb_low  = vmull_s16(cb_to_b, vget_low_s16(temp_sint_8_16));
+      cb_high = vmull_s16(cb_to_b, vget_high_s16(temp_sint_8_16));
+
+      temp_sint_8_16 = vcombine_s16(vshrn_n_s32(vqadd_s32(v_low, cb_low), 13), vshrn_n_s32(vqadd_s32(v_high, cb_high), 13));
+      result.val[0] = vqmovun_s16(temp_sint_8_16));
+
+      // CR to G
+      temp_sint_8_16 = vreinterpretq_s16_u16(temp_u_8_16 = vmovl_u8(vcr));
+      temp_sint_8_16 = vsub_u8(temp_sint_8_16, c_off);
+      cr_low  = vmull_s16(cr_to_g, vget_low_s16(temp_sint_8_16));
+      cr_high = vmull_s16(cr_to_g, vget_high_s16(temp_sint_8_16));
+
+      // CB to G
+      temp_sint_8_16 = vreinterpretq_s16_u16(temp_u_8_16 = vmovl_u8(vcb));
+      temp_sint_8_16 = vsub_u8(temp_sint_8_16, c_off);
+      cb_low  = vmull_s16(cb_to_g, vget_low_s16(temp_sint_8_16));
+      cb_high = vmull_s16(cb_to_g, vget_high_s16(temp_sint_8_16));
+
+      temp_sint_8_16 = vcombine_s16(vshrn_n_s32(vqadd_s32(cr_low, vqadd_s32(v_low, cb_low)), 13), vshrn_n_s32(vqadd_s32(cr_high, vqadd_s32(v_high, cb_high)), 13));
+      result.val[1] = vqmovun_s16(temp_sint_8_16));
+
+      vst3_u8(rgb, result);
+
+      j+=8
     }
-    //add padding
-    if (must_pad) {
-      rgb[rgb_i++] = 0x00;
-      rgb[rgb_i++] = 0x00;
-    }
-    last_in_row += ncols;
+    i+=ncols;
   }
 }
 
@@ -189,6 +226,18 @@ int write_bitmap(char* filename, bitmap_header* header, unsigned char* bitmap, u
   }
   fwrite(header, sizeof(bitmap_header), 1, fp);
   fwrite(bitmap, sizeof(unsigned char), bitmap_size, fp);
+  return 0;
+}
+
+int write_hex_data(char* filename, unsigned char* data, unsigned int bitmap_size) {
+
+  FILE* fp = fopen(filename, "wb");
+  if (!fp) {
+    printf("Unable to open file\n");
+    return 1;
+  }
+  fwrite(data, sizeof(unsigned char), bitmap_size, fp);
+  fclose(fp);
   return 0;
 }
 
@@ -249,7 +298,7 @@ unsigned char* raw_ycbcr_load(char* filename) {
 }
 
 int main( int argc, char** argv) {
-  printf("YCbCr to RGB: Simple Conversion\n");
+  printf("YCbCr to RGB: conversion in fixed point with vectorized conversion process\n");
   if (argc != 6) {
     printf("Not enough arguments.  Please provide, in this order, Y input file, Cb input file, Cr input file, WIDTH and HEIGHT of the image\n");
     return 0;
@@ -262,6 +311,10 @@ int main( int argc, char** argv) {
   //Assumes height and width are positive and less than max signed int value
   unsigned int ncols  = (unsigned int)atoi(argv[4]);
   unsigned int nrows = (unsigned int)atoi(argv[5]);
+
+  //Assumes height and width are positive and less than max signed int value
+  unsigned int ncols  = (unsigned int)atoi(argv[1]);
+  unsigned int nrows = (unsigned int)atoi(argv[2]);
 
   //determine file size, accounting for padding
   bool must_pad = (ncols & 0x0003) != 0x0000;
@@ -280,7 +333,7 @@ int main( int argc, char** argv) {
   // Perform colour space conversion
   convert_ycbcr_to_rgb(y, cb_up, cr_up, rgb, nrows, ncols);
 
-  write_bitmap("rgb_out_basic.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
+  write_bitmap("RGB_OUT_FIXED_16_scale.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
 
   free(cb_up);
   free(cr_up);
