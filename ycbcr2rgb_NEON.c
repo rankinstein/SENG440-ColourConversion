@@ -217,7 +217,7 @@ bitmap_header* compose_header(unsigned int width, unsigned int height, unsigned 
 //    header - a valid .bmp file header
 //    bitmap - a valid bitmap containing padding
 //    bitmap_size - the size of bitmap in NUMBER OF CHARS
-//  Returns 0 for success, 1 for failuer
+//  Returns 0 for success, 1 for failure
 int write_bitmap(char* filename, bitmap_header* header, unsigned char* bitmap, unsigned int bitmap_size) {
   FILE* fp = fopen(filename, "wb");
   if (!fp) {
