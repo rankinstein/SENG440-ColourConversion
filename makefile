@@ -44,23 +44,24 @@ raw2bmp:
 	convert out_Y.bmp out_Cb.bmp out_Cr.bmp -colorspace YCbCr -combine out_recomposed.bmp
 
 bins:
-	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic -lm
-	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
-	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O1 -lm
-	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O1 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
-	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O2 -lm
-	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O2 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
-	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O3 -lm
-	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O3 -lm -ftree-vectorize -mfloat-abi=softfp -mfpu=neon
+	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O1 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O1 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O1 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O2 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O2 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O2 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_basic_O3 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
+	$(CC) -O3 ./rgb2ycbcr_basic.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_basic_O3 -lm -ftree-vectorize -mfloat-abi=hard -mfpu=neon
 
-	$(CC) ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed
-	$(CC) ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
-	$(CC) -O1 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O1
-	$(CC) -O1 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O1 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
-	$(CC) -O2 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O2
-	$(CC) -O2 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O2 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
-	$(CC) -O3 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_fixed_O3
-	$(CC) -O3 ./rgb2ycbcr_fixedpoint.c bmp_operations.c -o ./bin/rgb2ycbcr_vec_fixed_O3 -ftree-vectorize -mfloat-abi=softpf -mfpu=neon
+	$(CC) ./ycbcr2rgb_fixedpoint.c -lm -o ./bin/ycbcr2rgb_fixed
+	$(CC) -O1 ./ycbcr2rgb_fixedpoint.c -lm -o ./bin/ycbcr2rgb_fixed_O1
+	$(CC) -O2 ./ycbcr2rgb_fixedpoint.c -lm -o ./bin/ycbcr2rgb_fixed_O2
+	$(CC) -O3 ./ycbcr2rgb_fixedpoint.c -lm -o ./bin/ycbcr2rgb_fixed_O3
+
+	$(CC) ./ycbcr2rgb_optimized.c -lm -o ./bin/ycbcr2rgb_optimized
+	$(CC) -O1 ./ycbcr2rgb_optimized.c -lm -o ./bin/ycbcr2rgb_optimized_O1
+	$(CC) -O2 ./ycbcr2rgb_optimized.c -lm -o ./bin/ycbcr2rgb_optimized_O2
+	$(CC) -O3 ./ycbcr2rgb_optimized.c -lm -o ./bin/ycbcr2rgb_optimized_O3
 
 
 perf:
@@ -84,22 +85,13 @@ perf:
 	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles_fixed_O2.txt ./bin/rgb2ycbcr_fixed_O2 ./input/marbles.bmp
 	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles_fixed_O3.txt ./bin/rgb2ycbcr_fixed_O3 ./input/marbles.bmp
 
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_basic.txt ./bin/rgb2ycbcr_vec_basic ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_basic_O1.txt ./bin/rgb2ycbcr_vec_basic_O1 ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_basic_O2.txt ./bin/rgb2ycbcr_vec_basic_O2 ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_basic_O3.txt ./bin/rgb2ycbcr_vec_basic_O3 ./input/tiger.bmp
+perf2rgb:
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_fixed.txt ./bin/ycbcr2rgb_fixed 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_fixed_O1.txt ./bin/ycbcr2rgb_fixed_O1 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_fixed_O2.txt ./bin/ycbcr2rgb_fixed_O2 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_fixed_O3.txt ./bin/ycbcr2rgb_fixed_O3 1418 1000
 
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_basic.txt ./bin/rgb2ycbcr_vec_basic ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_basic_O1.txt ./bin/rgb2ycbcr_vec_basic_O1 ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_basic_O2.txt ./bin/rgb2ycbcr_vec_basic_O2 ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_basic_O3.txt ./bin/rgb2ycbcr_vec_basic_O3 ./input/marbles.bmp
-
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_fixed.txt ./bin/rgb2ycbcr_vec_fixed ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_fixed_O1.txt ./bin/rgb2ycbcr_vec_fixed_O1 ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_fixed_O2.txt ./bin/rgb2ycbcr_vec_fixed_O2 ./input/tiger.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_tiger_fixed_O3.txt ./bin/rgb2ycbcr_vec_fixed_O3 ./input/tiger.bmp
-
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_fixed.txt ./bin/rgb2ycbcr_vec_fixed ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_fixed_O1.txt ./bin/rgb2ycbcr_vec_fixed_O1 ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_fixed_O2.txt ./bin/rgb2ycbcr_vec_fixed_O2 ./input/marbles.bmp
-	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/vec_marbles_fixed_O3.txt ./bin/rgb2ycbcr_vec_fixed_O3 ./input/marbles.bmp
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_optimized.txt ./bin/ycbcr2rgb_optimized 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_optimized_O1.txt ./bin/ycbcr2rgb_optimized_O1 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_optimized_O2.txt ./bin/ycbcr2rgb_optimized_O2 1418 1000
+	perf_3.16 stat -x , --repeat 100 -e cpu-cycles,instructions,branches,branch-misses,cpu-clock,page-faults,context-switches,cache-references,cache-misses -o results/marbles2rgb_optimized_O3.txt ./bin/ycbcr2rgb_optimized_O3 1418 1000
