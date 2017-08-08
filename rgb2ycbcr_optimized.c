@@ -87,43 +87,41 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
 	temp = vmlal_s16(temp, green_odd, g_to_cr);
 	Cr_odd = vmlal_s16(temp, red_odd, r_to_cr);
 	
+        int64x2_t temp_64x2;
+        int32x2_t temp_32x2;
+	temp_64x2 = vpaddlq_s32(Cb_even);
+        temp_64x2 = vpadalq_s32(temp_64x2, Cb_odd);
+	temp_32x2 = vqrshrn_n_s64(temp_64x2, 18) + 128;
 
-        B_even = data[i_even++];
-        G_even = data[i_even++];
-        R_even = data[i_even++];
-        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x4000) >> 15));
-        t_Cb = (((R_TO_CB * R_even) >> 1) + (G_TO_CB * G_even + B_TO_CB * B_even));
-        t_Cr = ((R_TO_CR * R_even + G_TO_CR * G_even) + ((B_TO_CR * B_even) >> 2));
+	int temp_Cb[2];
+	vst1_s32(temp_Cb, temp_32x2); 
 
-        // pixel 3
-        B_odd = data[i_odd++];
-        G_odd = data[i_odd++];
-        R_odd = data[i_odd++];
-        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x4000) >> 15));
-        t_Cb += (((R_TO_CB * R_odd) >> 1) + (G_TO_CB * G_odd + B_TO_CB * B_odd));
-        t_Cr += ((R_TO_CR * R_odd + G_TO_CR * G_odd) + ((B_TO_CR * B_odd) >> 2));
+	temp_64x2 = vpaddlq_s32(Cr_even);
+        temp_64x2 = vpadalq_s32(temp_64x2, Cr_odd);
+	temp_32x2 = vqrshrn_n_s64(temp_64x2, 18) + 128;
 
+	int temp_Cr[2];
+	vst1_s32(temp_Cr, temp_32x2);
+
+	int temp_Y_even[4];
+	int temp_Y_odd[4];
+	vst1_s16(temp_Y_even, Y_even);
+   	vst1_s16(temp_Y_odd, Y_odd);
+	
+	// TODO Store vector data into data array
+
+        Y[pixel_even] = (char) (temp_Y_even[0]);
+        Y[pixel_odd] = (char) (temp_Y_odd[0]);
         pixel_even++;
         col++;
 
-        // pixel 2
-        B_even = data[i_even++];
-        G_even = data[i_even++];
-        R_even = data[i_even++];
-        Y[pixel_even] = (char) (16 + ((((((R_TO_Y * R_even) + ((B_TO_Y * B_even) >> 2)) >> 1) + (G_TO_Y * G_even)) + 0x4000) >> 15));
-        t_Cb += (((R_TO_CB * R_even) >> 1) + (G_TO_CB * G_even + B_TO_CB * B_even));
-        t_Cr += ((R_TO_CR * R_even + G_TO_CR * G_even) + ((B_TO_CR * B_even) >> 2));
+        Cb[pixel] = (char) (temp_Cb[0]);
+        Cr[pixel] = (char) (temp_Cr[0]);
+	
+	pixel++;
 
-        // pixel 4
-        B_odd = data[i_odd++];
-        G_odd = data[i_odd++];
-        R_odd = data[i_odd++];
-        Y[pixel_odd] = (char) (16 + ((((((R_TO_Y * R_odd) + ((B_TO_Y * B_odd) >> 2)) >> 1) + (G_TO_Y * G_odd)) + 0x4000) >> 15));
-        t_Cb += (((R_TO_CB * R_odd) >> 1) + (G_TO_CB * G_odd + B_TO_CB * B_odd));
-        t_Cr += ((R_TO_CR * R_odd + G_TO_CR * G_odd) + ((B_TO_CR * B_odd) >> 2));
-
-        Cb[pixel] = (char) (128 + ((t_Cb + 0x20000) >> 18));
-        Cr[pixel] = (char) (128 + ((t_Cr + 0x20000) >> 18));
+        Cb[pixel] = (char) (temp_Cb[1]);
+        Cr[pixel] = (char) (temp_Cr[1]);
 
         pixel++;
         pixel_even++;
