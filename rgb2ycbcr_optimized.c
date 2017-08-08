@@ -43,9 +43,8 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
 	uint8x8x3_t rgb_even = vld3_u8(&data[i_even]);
 	uint8x8x3_t rgb_odd = vld3_u8(&data[i_odd]);
 	int32x4_t temp;
-        int16x4_t Y_even;
-	int32x4_t Cb_temp;
-	int32x4_t Cr_temp;
+        int16x4_t Y_even, Y_odd;
+	int32x4_t Cb_even, Cr_even, Cb_odd, Cr_odd;
         int16x4_t red_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[2])));
         int16x4_t green_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[1])));
         int16x4_t blue_even = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_even.val[0])));
@@ -60,13 +59,34 @@ void rgb2ycbcr_fixedpoint(char * __restrict Y, char * __restrict Cb, char * __re
 	temp = vmull_s16(red_even, r_to_cb);
         temp = vshrq_n_s32(temp, 1);
 	temp = vmlal_s16(temp, green_even, g_to_cb);
-	Cb_temp = vmlal_s16(temp, blue_even, b_to_cb);
+	Cb_even = vmlal_s16(temp, blue_even, b_to_cb);
 
 	temp = vmull_s16(blue_even, b_to_cr);
 	temp = vshrq_n_s32(temp, 2);
 	temp = vmlal_s16(temp, green_even, g_to_cr);
-	Cr_temp = vmlal_s16(temp, red_even, r_to_cr);
+	Cr_even = vmlal_s16(temp, red_even, r_to_cr);
 
+        int16x4_t red_odd = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_odd.val[2])));
+        int16x4_t green_odd = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_odd.val[1])));
+        int16x4_t blue_odd = vget_low_s16(vreinterpretq_s16_u16(vmovl_u8(rgb_odd.val[0])));
+	temp = vmull_s16(blue_odd, b_to_y);
+        temp = vshrq_n_s32(temp, 2);
+	temp = vmlal_s16(temp, red_odd, r_to_y);
+        temp = vshrq_n_s32(temp, 1);
+        temp = vmlal_s16(temp, green_odd, g_to_y);
+        temp = vaddq_s32(temp, offset_y);
+        Y_odd = vshrn_n_s32(temp, 15);
+
+	temp = vmull_s16(red_odd, r_to_cb);
+        temp = vshrq_n_s32(temp, 1);
+	temp = vmlal_s16(temp, green_odd, g_to_cb);
+	Cb_odd = vmlal_s16(temp, blue_odd, b_to_cb);
+
+	temp = vmull_s16(blue_odd, b_to_cr);
+	temp = vshrq_n_s32(temp, 2);
+	temp = vmlal_s16(temp, green_odd, g_to_cr);
+	Cr_odd = vmlal_s16(temp, red_odd, r_to_cr);
+	
 
         B_even = data[i_even++];
         G_even = data[i_even++];
