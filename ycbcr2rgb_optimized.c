@@ -25,68 +25,104 @@ char* upsample(unsigned char* c_small, unsigned int n_small_rows, unsigned int n
   unsigned int n_big_rows = n_small_rows << 1;
   unsigned int n_big_cols = n_small_cols << 1;
   unsigned char* c_big = malloc(sizeof(char)*n_big_rows*n_big_cols);
-  unsigned int row = 0;
-  unsigned int col = 0;
-  unsigned int small_i;
-  unsigned int big_i;
+  // unsigned int row = 0;
+  // unsigned int col = 0;
+  // unsigned int small_i;
+  // unsigned int big_i;
 
+  //optimized method
+  unsigned int i = 0;
+  unsigned int col = 0;
+  unsigned char* small_row_a = c_small;
+  unsigned char* small_row_b = c_small + n_small_cols;
+  unsigned char* big_row_a = c_big;
+  unsigned char* big_row_b = c_big + n_big_cols;
+
+  printf("n_small_rows: %d\n", n_small_rows);
+  printf("n_small_cols: %d\n", n_small_cols);
+  printf("n_big_rows:   %d\n", n_big_rows);
+  printf("n_big_cols:   %d\n", n_big_cols);
+
+  //Method 1: seperate array pointers
   //Pass 1: interpolate all but last 2 rows and last 2 cols.
-  while (row < n_small_rows - 1) {
+  while (i < n_small_rows - 1) {
     col = 0;
     while (col < n_small_cols - 1) {
 
-      small_i = row*n_small_cols + col;
-      big_i = (row << 1)*n_big_cols + (col << 1);
-
-      c_big[big_i]                  = c_small[small_i];
-      c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
-      c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
-      c_big[big_i + n_big_cols + 1] = (c_small[small_i] + c_small[small_i + n_small_cols + 1]) >> 1;
+      big_row_a[col << 1]       = small_row_a[col];
+      big_row_a[(col << 1) + 1] = (small_row_a[col] + small_row_a[col + 1]) >> 1;
+      big_row_b[col << 1]       = (small_row_a[col] + small_row_b[col]) >> 1;
+      big_row_b[(col << 1) + 1] = (small_row_a[col] + small_row_b[col + 1]) >> 1;
 
       col++;
     }
 
-    row++;
+    big_row_a += n_big_cols << 1;
+    big_row_b += n_big_cols << 1;
+    small_row_a = small_row_b;
+    small_row_b += n_small_cols;
+
+    i++;
   }
 
-  //Pass 2: interpolate last row, and copy pixes that can't be interpolated
-  row = n_small_rows - 1;
-  col = 0;
-  while (col < n_small_cols - 1) {
-    small_i = row*n_small_cols + col;
-    big_i   = (row << 1)*n_big_cols + (col << 1);
+  //Method 2: singlular array pointer
+  //Pass 1: interpolate all but last 2 rows and last 2 cols.
+  // while (row < n_small_rows - 1) {
+  //   col = 0;
+  //   while (col < n_small_cols - 1) {
+  //
+  //     small_i = row*n_small_cols + col;
+  //     big_i = (row << 1)*n_big_cols + (col << 1);
+  //
+  //     c_big[big_i]                  = c_small[small_i];
+  //     c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
+  //     c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
+  //     c_big[big_i + n_big_cols + 1] = (c_small[small_i] + c_small[small_i + n_small_cols + 1]) >> 1;
+  //
+  //     col++;
+  //   }
+  //
+  //   row++;
+  // }
 
-    c_big[big_i]                  = c_small[small_i];
-    c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
-    c_big[big_i + n_big_cols]     = c_big[big_i] ;
-    c_big[big_i + n_big_cols + 1] = c_big[big_i + 1];
-
-    col++;
-  }
-
-  //Pass 3: interpolate last column, and copy pixes that can't be interpolated
-  row = 0;
-  col = n_small_cols - 1;
-  while (row < n_small_rows - 1) {
-    small_i = row*n_small_cols + col;
-    big_i   = (row << 1)*n_big_cols + (col << 1);
-
-    c_big[big_i]                  = c_small[small_i];
-    c_big[big_i + 1]              = c_small[small_i];
-    c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
-    c_big[big_i + n_big_cols + 1] = c_big[big_i + n_big_cols];
-
-    row++;
-  }
-
-  //Pass 4: copy corner values
-  small_i = n_small_rows*n_small_cols - 1;
-  big_i   = (n_big_rows - 1)*(n_big_cols) - 2;
-
-  c_big[big_i]                  = c_small[small_i];
-  c_big[big_i + 1]              = c_small[small_i];
-  c_big[big_i + n_big_cols]     = c_small[small_i];
-  c_big[big_i + n_big_cols + 1] = c_small[small_i];
+  // //Pass 2: interpolate last row, and copy pixes that can't be interpolated
+  // row = n_small_rows - 1;
+  // col = 0;
+  // while (col < n_small_cols - 1) {
+  //   small_i = row*n_small_cols + col;
+  //   big_i   = (row << 1)*n_big_cols + (col << 1);
+  //
+  //   c_big[big_i]                  = c_small[small_i];
+  //   c_big[big_i + 1]              = (c_small[small_i] + c_small[small_i + 1]) >> 1;
+  //   c_big[big_i + n_big_cols]     = c_big[big_i] ;
+  //   c_big[big_i + n_big_cols + 1] = c_big[big_i + 1];
+  //
+  //   col++;
+  // }
+  //
+  // //Pass 3: interpolate last column, and copy pixes that can't be interpolated
+  // row = 0;
+  // col = n_small_cols - 1;
+  // while (row < n_small_rows - 1) {
+  //   small_i = row*n_small_cols + col;
+  //   big_i   = (row << 1)*n_big_cols + (col << 1);
+  //
+  //   c_big[big_i]                  = c_small[small_i];
+  //   c_big[big_i + 1]              = c_small[small_i];
+  //   c_big[big_i + n_big_cols]     = (c_small[small_i] + c_small[small_i + n_small_cols]) >> 1;
+  //   c_big[big_i + n_big_cols + 1] = c_big[big_i + n_big_cols];
+  //
+  //   row++;
+  // }
+  //
+  // //Pass 4: copy corner values
+  // small_i = n_small_rows*n_small_cols - 1;
+  // big_i   = (n_big_rows - 1)*(n_big_cols) - 2;
+  //
+  // c_big[big_i]                  = c_small[small_i];
+  // c_big[big_i + 1]              = c_small[small_i];
+  // c_big[big_i + n_big_cols]     = c_small[small_i];
+  // c_big[big_i + n_big_cols + 1] = c_small[small_i];
 
   return c_big;
 }
@@ -240,9 +276,11 @@ int main( int argc, char** argv) {
 
   unsigned char* cb_up = malloc(sizeof(unsigned char)*nrows*ncols);
   cb_up = upsample(cb, nrows >> 1, ncols >> 1);
+  write_bitmap("upsample/cb_new_upsample.bmp", compose_header(ncols, nrows, bitmap_size), make_greyscale_bitmap(cb_up, nrows, ncols), bitmap_size);
 
   unsigned char* cr_up = malloc(sizeof(unsigned char)*ncols*nrows);
   cr_up = upsample(cr, nrows >> 1, ncols >> 1);
+  write_bitmap("upsample/cr_new_upsample.bmp", compose_header(ncols, nrows, bitmap_size), make_greyscale_bitmap(cr_up, nrows, ncols), bitmap_size);
 
   convert_ycbcr_to_rgb(y, cb_up, cr_up, rgb, nrows, ncols);
   write_bitmap("RGB_OUT_FIXED_16_scale.bmp", compose_header(ncols, nrows, bitmap_size), rgb, bitmap_size);
